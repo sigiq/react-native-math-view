@@ -61,7 +61,8 @@ export const getPreserveAspectRatio = (alignment: string, scale: string) => `${a
 export const styles = StyleSheet.create({
     container: {
         //flexDirection: 'row',
-        display: 'flex'
+        display: 'flex',
+        minHeight: 28
     },
     contain: {
         maxWidth: '100%',

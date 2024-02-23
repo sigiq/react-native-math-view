@@ -38,7 +38,7 @@
     "mathjax-full": "^3.1.4",
     "react": "*",
     "react-native": "*",
-    "transformation-matrix": "^2.11.1"
+    "transformation-matrix": "https://github.com/sigiq/transformation-matrix.git"
   },
   "peerDependencies": {
     "react-native": "*",
