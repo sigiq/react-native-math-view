@@ -1,7 +1,7 @@
 
 import _ from 'lodash';
 import React, { useMemo } from 'react';
-import { I18nManager, StyleProp, StyleSheet, Text, TextProps, View, ViewStyle } from 'react-native';
+import { I18nManager, StyleProp, StyleSheet, Text, TextProps, View, ViewStyle, ScrollView } from 'react-native';
 import { MathViewProps } from './common';
 //@ts-ignore
 import MathView from './MathView';
@@ -23,7 +23,8 @@ export type MathTextItemProps<T extends boolean = boolean> = (T extends true ? O
     isMath: T,
     Component?: MathView,
     CellRendererComponent?: ElementOrRenderer,
-    inline?: boolean
+    inline?: boolean,
+    renderMathTextError?: () => void;
 }
 
 export type MathTextRowProps = MathTextItemProps & {
@@ -31,6 +32,7 @@ export type MathTextRowProps = MathTextItemProps & {
     containerStyle?: StyleProp<ViewStyle>,
     index: number,
     renderItem?: (props: MathTextItemRenderingProps) => JSX.Element
+    renderMathTextError?: () => void;
 }
 
 export type MathTextProps = Pick<MathTextRowProps, 'direction' | 'containerStyle' | 'renderItem' | 'CellRendererComponent' | 'Component'> & {
@@ -38,9 +40,11 @@ export type MathTextProps = Pick<MathTextRowProps, 'direction' | 'containerStyle
     math?: string,
     style?: StyleProp<ViewStyle>,
     renderRow?: (props: MathTextRowRenderingProps) => JSX.Element
+    renderMathTextError?: () => void;
+    enableScroll?: boolean;
 }
 
-export const InlineMathItem = React.memo(({ value, isMath, CellRendererComponent, Component, inline, style, ...props }: MathTextItemProps) => {
+export const InlineMathItem = React.memo(({ value, isMath, CellRendererComponent, Component, inline, style, renderMathTextError, ...props }: MathTextItemProps) => {
     if (value === '') return null;
     const config = useMemo(() => ({ inline }), [inline]);
     const Renderer = Component || MathView;
@@ -50,6 +54,12 @@ export const InlineMathItem = React.memo(({ value, isMath, CellRendererComponent
             math={value}
             resizeMode='contain'
             config={config}
+            renderError={({ error }) => {
+                if (renderMathTextError) {
+                    renderMathTextError();
+                }
+                return (<Text />)
+            }}
         /> :
         <Text
             {...props}
@@ -61,7 +71,7 @@ export const InlineMathItem = React.memo(({ value, isMath, CellRendererComponent
     return React.cloneElement(container, {}, el);
 });
 
-export const MathTextRow = React.memo(({ value, isMath, direction, containerStyle, CellRendererComponent, renderItem, index, ...props }: MathTextRowProps) => {
+export const MathTextRow = React.memo(({ value, isMath, direction, containerStyle, CellRendererComponent, renderItem, renderMathTextError, index, ...props }: MathTextRowProps) => {
     const parts = useMemo(() => _.flatten(_.map(_.split(value, /\$+/g), (value, i) => {
         if (isMath || i % 2 === 1) {
             return [{ value, isMath: true, inline: !isMath }];
@@ -88,6 +98,13 @@ export const MathTextRow = React.memo(({ value, isMath, direction, containerStyl
                         CellRendererComponent={CellRendererComponent}
                         index={i}
                         rowIndex={index}
+                        renderError={({ error }) =>{
+                            if (renderMathTextError) {
+                                renderMathTextError();
+                            }
+                            return (<Text />)
+                        }}
+                        renderMathTextError={renderMathTextError}
                     />;
                     return React.cloneElement(i === parts.length - 1 ? el : <>{el}<Text> </Text></>, { key: `InlineMath.${value}.${i}` });
                 })
@@ -96,7 +113,7 @@ export const MathTextRow = React.memo(({ value, isMath, direction, containerStyl
     )
 });
 
-const MathText = React.memo(({ value, renderRow, style, math, ...props }: MathTextProps) => {
+const MathText = React.memo(({ value, renderRow, style, math, enableScroll, renderMathTextError, ...props }: MathTextProps) => {
     if (__DEV__ && value && math) {
         console.warn('MathText has received both `value` and `math` props');
     } else if (!value && !math) {
@@ -105,6 +122,7 @@ const MathText = React.memo(({ value, renderRow, style, math, ...props }: MathTe
     }
     const statements = useMemo(() => _.split(_.replace(value || `$${math}$`, /\\(\(|\))/g, '$'), /\$\$/g), [value]);
     const Container = renderRow || MathTextRow;
+    const ComponentWrapper = enableScroll ? ScrollView : View
 
     return (
         <View style={style}>
@@ -113,13 +131,16 @@ const MathText = React.memo(({ value, renderRow, style, math, ...props }: MathTe
                     if (value === '') return null;
                     const isMath = i % 2 === 1;
                     return _.map(_.split(value, /\n/g), (val, index) =>
+                    <ComponentWrapper horizontal={true}>
                         <Container
                             {...props}
                             key={`${value}.${i}.${index}`}
                             value={val}
                             isMath={isMath}
                             index={i}
+                            renderMathTextError={renderMathTextError}
                         />
+                    </ComponentWrapper>
                     )
                 })
             }
