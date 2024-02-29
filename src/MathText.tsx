@@ -80,6 +80,7 @@ export const MathTextRow = React.memo(({ value, isMath, direction, containerStyl
         }
     })), [value, isMath]);
     const Renderer = renderItem || InlineMathItem;
+
     return (
         <View
             style={[
@@ -122,16 +123,16 @@ const MathText = React.memo(({ value, renderRow, style, math, enableScroll, rend
     }
     const statements = useMemo(() => _.split(_.replace(value || `$${math}$`, /\\(\(|\))/g, '$'), /\$\$/g), [value]);
     const Container = renderRow || MathTextRow;
-    const ComponentWrapper = enableScroll ? ScrollView : View
-
+    
     return (
         <View style={style}>
             {
                 _.map(statements, (value, i) => {
                     if (value === '') return null;
                     const isMath = i % 2 === 1;
+                    const ComponentWrapper = (isMath && enableScroll) ? ScrollView : View
                     return _.map(_.split(value, /\n/g), (val, index) =>
-                    <ComponentWrapper horizontal={true}>
+                    <ComponentWrapper showsHorizontalScrollIndicator={true} persistentScrollbar={true} horizontal={true}>
                         <Container
                             {...props}
                             key={`${value}.${i}.${index}`}
