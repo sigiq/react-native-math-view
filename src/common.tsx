@@ -62,7 +62,7 @@ export const styles = StyleSheet.create({
     container: {
         //flexDirection: 'row',
         display: 'flex',
-        minHeight: 28
+        minHeight: 4
     },
     contain: {
         maxWidth: '100%',
